@@ -3,24 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glass Detection</title>
+    <title>Cat Or Dog Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 50px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+        }
+        label {
+            font-size: 16px;
+            font-weight: bold;
+            display: block;
+            margin: 10px 0;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            text-align: center;
+            width: 70%;
+            max-width: 300px;
+        }
+        .popup img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .popup button {
+            background-color: #dc3545;
+            margin-top: 10px;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+    </style>
+    <script>
+        function showPopup(event) {
+            event.preventDefault();
+            let fileInput = document.getElementById('file');
+            let modelSelect = document.getElementById('model_name');
+            if (fileInput.files.length === 0) {
+                alert("Please upload an image.");
+                return;
+            }
+            let formData = new FormData();
+            let file = fileInput.files[0];
+            formData.append("file", file);
+            formData.append("model_name", modelSelect.value);
+            
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById("popup-image").src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            
+            fetch("/predict", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("popup-text").innerText = "Prediction: " + data.result;
+                document.getElementById("popup").style.display = "block";
+                document.getElementById("overlay").style.display = "block";
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Error in prediction");
+            });
+        }
+        function closePopup() {
+            document.getElementById("popup").style.display = "none";
+            document.getElementById("overlay").style.display = "none";
+        }
+    </script>
 </head>
 <body>
-    <h1>Upload an Image to Detect Yims Cafe Glass</h1>
-    <form action="/predict" method="POST" enctype="multipart/form-data">
-        <label for="file">Choose image to upload:</label>
-        <input type="file" id="file" name="file" required>
-        <br><br>
-        <label for="model_name">Choose model:</label>
-        <select id="model_name" name="model_name" required>
-            <option value="cnn">CNN</option>
-            <option value="vgg16">VGG16</option>
-            <option value="resnet50">ResNet50</option>
-            <option value="inceptionv3">InceptionV3</option>
-            <option value="mobilenetv2">MobileNetV2</option>
-        </select>
-        <br><br>
-        <button type="submit">Submit</button>
-    </form>
+    <div class="container">
+        <h1>Upload an Image to Detect Cat Or Dog</h1>
+        <form onsubmit="showPopup(event)" enctype="multipart/form-data">
+            <label for="file">Choose image to upload:</label>
+            <input type="file" id="file" name="file" required>
+            
+            <label for="model_name">Choose model:</label>
+            <select id="model_name" name="model_name" required>
+                <option value="cnn">CNN</option>
+                <option value="vgg16">VGG16</option>
+                <option value="resnet50">ResNet50</option>
+                <option value="inceptionv3">InceptionV3</option>
+                <option value="mobilenetv2">MobileNetV2</option>
+            </select>
+            
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+    
+    <div id="overlay" class="overlay"></div>
+    <div id="popup" class="popup">
+        <p id="popup-text"></p>
+        <img id="popup-image" src="" alt="Uploaded Image">
+        <button onclick="closePopup()">Close</button>
+    </div>
 </body>
 </html>
